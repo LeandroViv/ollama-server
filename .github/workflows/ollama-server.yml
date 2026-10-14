@@ -1,0 +1,36 @@
+name: Ollama Server for Dyad
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: 'Modelo de Ollama a bajar'
+        required: true
+        default: 'qwen2.5-coder:1.5b'
+
+jobs:
+  run-ollama:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama serve &
+          sleep 5
+
+      - name: Pull Model
+        run: |
+          ollama pull ${{ github.event.inputs.model }}
+
+      - name: Install Cloudflared & Expose Server
+        run: |
+          # Descargar cloudflared
+          wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          sudo dpkg -i cloudflared-linux-amd64.deb
+          
+          echo "=========================================================="
+          echo "🚀 LEVANTANDO TÚNEL PARA DYAD WINDOWS..."
+          echo "=========================================================="
+          
+          # Iniciar túnel en el puerto de Ollama (11434)
+          cloudflared tunnel --url http://localhost:11434
